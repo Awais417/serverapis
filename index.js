@@ -3,6 +3,8 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
+const paymentController = require("./controllers/paymentController");
 
 dotenv.config();
 
@@ -12,14 +14,21 @@ const app = express();
 const corsOptions = {
   origin: "*",
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "stripe-signature"],
   credentials: false,
 };
 
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
-// Body parser
+// Stripe webhook needs raw body for signature verification
+app.use(
+  "/payment/webhook",
+  express.raw({ type: "application/json" }),
+  paymentController.stripeWebhook
+);
+
+// Body parser for other routes
 app.use(express.json());
 
 // Connect to database
@@ -27,6 +36,7 @@ connectDB();
 
 // Routes
 app.use("/auth", authRoutes);
+app.use("/payment", paymentRoutes);
 
 app.get("/", (req, res) => {
   res.send(`App is working fine`);

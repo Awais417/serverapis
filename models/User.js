@@ -24,6 +24,12 @@ const userSchema = new mongoose.Schema(
     },
     resetPasswordToken: String,
     resetPasswordExpires: Date,
+    paymentStatus: {
+      type: Boolean,
+      default: false,
+    },
+    stripeCustomerId: String,
+    paymentDate: Date,
   },
   { timestamps: true }
 );
