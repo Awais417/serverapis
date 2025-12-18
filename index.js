@@ -39,8 +39,15 @@ app.use((req, res, next) => {
 
 // Error handler
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: "Something broke!", error: err.message });
+  console.error("Error:", err);
+  
+  // Don't send error stack in production
+  const isDevelopment = process.env.NODE_ENV !== "production";
+  
+  res.status(err.status || 500).json({
+    message: err.message || "Something went wrong!",
+    ...(isDevelopment && { error: err.stack }),
+  });
 });
 
 // Vercel handler export

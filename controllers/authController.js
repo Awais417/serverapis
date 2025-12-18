@@ -15,9 +15,16 @@ exports.signup = async (req, res, next) => {
         .json({ message: "Username, email and password are required" });
     }
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
+    // Check for existing email
+    const existingEmail = await User.findOne({ email });
+    if (existingEmail) {
       return res.status(409).json({ message: "Email is already registered" });
+    }
+
+    // Check for existing username
+    const existingUsername = await User.findOne({ username });
+    if (existingUsername) {
+      return res.status(409).json({ message: "Username is already taken" });
     }
 
     const user = await User.create({ username, email, password });
@@ -33,6 +40,25 @@ exports.signup = async (req, res, next) => {
       },
     });
   } catch (error) {
+    // Handle MongoDB duplicate key errors
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      const message =
+        field === "email"
+          ? "Email is already registered"
+          : field === "username"
+          ? "Username is already taken"
+          : `${field} already exists`;
+      return res.status(409).json({ message });
+    }
+
+    // Handle validation errors
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map((err) => err.message);
+      return res.status(400).json({ message: messages.join(", ") });
+    }
+
+    // Pass other errors to error handler
     next(error);
   }
 };
