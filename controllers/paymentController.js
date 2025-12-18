@@ -10,6 +10,7 @@ if (process.env.STRIPE_SECRET_KEY) {
 }
 
 const User = require("../models/User");
+const Code = require("../models/Code");
 const mongoose = require("mongoose");
 
 // Helper function to check and update subscription expiration
@@ -66,7 +67,7 @@ exports.createCheckoutSession = async (req, res, next) => {
       });
     }
 
-    const { userId, amount, currency = "usd" } = req.body;
+    const { userId, amount, currency = "usd", couponCode } = req.body;
 
     if (!userId || !amount) {
       return res.status(400).json({
@@ -75,6 +76,42 @@ exports.createCheckoutSession = async (req, res, next) => {
           message: "User ID and amount are required",
         },
       });
+    }
+
+    // Validate and apply coupon code if provided
+    let finalAmount = amount;
+    let discountAmount = 0;
+    let appliedCoupon = null;
+
+    if (couponCode) {
+      const coupon = await Code.findOne({
+        code: couponCode.trim(),
+        isActive: true,
+      });
+
+      if (coupon && coupon.discount) {
+        // Calculate discount
+        discountAmount = (amount * coupon.discount) / 100;
+        finalAmount = amount - discountAmount;
+        
+        // Ensure final amount is not negative
+        if (finalAmount < 0) {
+          finalAmount = 0;
+        }
+
+        appliedCoupon = {
+          code: coupon.code,
+          discount: coupon.discount,
+          discountAmount: discountAmount,
+        };
+      } else {
+        return res.status(400).json({
+          error: {
+            code: "400",
+            message: "Invalid or inactive coupon code",
+          },
+        });
+      }
     }
 
     // Validate MongoDB ObjectId format
@@ -112,28 +149,37 @@ exports.createCheckoutSession = async (req, res, next) => {
       await user.save();
     }
 
+    // Build line items - use final amount (already discounted)
+    const lineItems = [
+      {
+        price_data: {
+          currency: currency.toLowerCase(),
+          product_data: {
+            name: "Premium Subscription",
+            description: appliedCoupon 
+              ? `Premium account access (${appliedCoupon.discount}% off with ${appliedCoupon.code})`
+              : "Premium account access",
+          },
+          unit_amount: Math.round(finalAmount * 100), // Final amount after discount in cents
+        },
+        quantity: 1,
+      },
+    ];
+
     // Create checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ["card"],
-      line_items: [
-        {
-          price_data: {
-            currency: currency.toLowerCase(),
-            product_data: {
-              name: "Premium Subscription",
-              description: "Premium account access",
-            },
-            unit_amount: Math.round(amount * 100), // Convert to cents
-          },
-          quantity: 1,
-        },
-      ],
+      line_items: lineItems,
       mode: "payment",
       success_url: `${process.env.FRONTEND_URL || "http://localhost:3000"}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.FRONTEND_URL || "http://localhost:3000"}/payment?userId=${user._id.toString()}`,
       metadata: {
         userId: user._id.toString(),
+        couponCode: appliedCoupon ? appliedCoupon.code : null,
+        originalAmount: amount.toString(),
+        discountAmount: discountAmount.toString(),
+        finalAmount: finalAmount.toString(),
       },
     });
 

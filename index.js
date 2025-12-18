@@ -5,6 +5,7 @@ const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const codeRoutes = require("./routes/codeRoutes");
+const couponRoutes = require("./routes/couponRoutes");
 const subscriptionRoutes = require("./routes/subscriptionRoutes");
 const paymentController = require("./controllers/paymentController");
 const { expireSubscriptions } = require("./utils/expireSubscriptions");
@@ -73,6 +74,7 @@ if (require.main === module) {
 app.use("/auth", authRoutes);
 app.use("/payment", paymentRoutes);
 app.use("/codes", codeRoutes);
+app.use("/coupon", couponRoutes);
 app.use("/subscription", subscriptionRoutes);
 
 app.get("/", (req, res) => {
