@@ -12,5 +12,12 @@
       "src": "/(.*)",
       "dest": "/"
     }
+  ],
+
+  "crons": [
+    {
+      "path": "/subscription/expire",
+      "schedule": "0 * * * *"
+    }
   ]
 }

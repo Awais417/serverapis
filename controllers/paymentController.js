@@ -12,6 +12,42 @@ if (process.env.STRIPE_SECRET_KEY) {
 const User = require("../models/User");
 const mongoose = require("mongoose");
 
+// Helper function to check and update subscription expiration
+const checkSubscriptionExpiry = async (user) => {
+  if (user.subscriptionStatus === "active" && user.subscriptionExpiryDate) {
+    const now = new Date();
+    if (now > user.subscriptionExpiryDate) {
+      user.subscriptionStatus = "expired";
+      user.paymentStatus = false;
+      await user.save();
+      console.log(`Subscription expired for user: ${user._id}`);
+      return true; // Subscription expired
+    }
+  }
+  return false; // Subscription still active
+};
+
+// Helper function to get effective payment status (checks expiration)
+const getEffectivePaymentStatus = (user) => {
+  if (!user.paymentStatus || user.subscriptionStatus === "none") {
+    return false;
+  }
+  
+  if (user.subscriptionStatus === "expired") {
+    return false;
+  }
+  
+  if (user.subscriptionStatus === "active" && user.subscriptionExpiryDate) {
+    const now = new Date();
+    if (now > user.subscriptionExpiryDate) {
+      return false; // Expired
+    }
+    return true; // Active
+  }
+  
+  return user.paymentStatus;
+};
+
 // POST /payment/create-checkout-session
 exports.createCheckoutSession = async (req, res, next) => {
   // Set CORS headers first
@@ -167,10 +203,17 @@ exports.stripeWebhook = async (req, res, next) => {
           if (userId) {
             const user = await User.findById(userId);
             if (user) {
+              const paymentDate = new Date();
+              // Set subscription expiry to exactly 1 year from payment date
+              const expiryDate = new Date(paymentDate);
+              expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+              
               user.paymentStatus = true;
-              user.paymentDate = new Date();
+              user.paymentDate = paymentDate;
+              user.subscriptionExpiryDate = expiryDate;
+              user.subscriptionStatus = "active";
               await user.save();
-              console.log(`Payment successful for user: ${userId}`);
+              console.log(`Payment successful for user: ${userId}, expires on: ${expiryDate}`);
             }
           }
           break;
@@ -229,7 +272,7 @@ exports.getPaymentStatus = async (req, res, next) => {
       });
     }
 
-    const user = await User.findById(userId).select("username email paymentStatus paymentDate");
+    const user = await User.findById(userId).select("username email paymentStatus paymentDate subscriptionExpiryDate subscriptionStatus");
 
     if (!user) {
       return res.status(404).json({
@@ -241,6 +284,13 @@ exports.getPaymentStatus = async (req, res, next) => {
       });
     }
 
+    // Check if subscription has expired
+    await checkSubscriptionExpiry(user);
+    
+    // Refresh user data after potential expiration update
+    await user.populate();
+    const effectiveStatus = getEffectivePaymentStatus(user);
+
     res.status(200).json({
       message: "Payment status retrieved",
       requestedUserId: userId, // Include the ID that was requested
@@ -248,8 +298,10 @@ exports.getPaymentStatus = async (req, res, next) => {
         id: user._id.toString(),
         username: user.username,
         email: user.email,
-        paymentStatus: user.paymentStatus || false,
+        paymentStatus: effectiveStatus,
         paymentDate: user.paymentDate || null,
+        subscriptionExpiryDate: user.subscriptionExpiryDate || null,
+        subscriptionStatus: user.subscriptionStatus || "none",
       },
     });
   } catch (error) {
@@ -299,10 +351,22 @@ exports.verifySession = async (req, res, next) => {
         if (user) {
           // Update payment status if not already set
           if (!user.paymentStatus) {
+            const paymentDate = new Date();
+            // Set subscription expiry to exactly 1 year from payment date
+            const expiryDate = new Date(paymentDate);
+            expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+            
             user.paymentStatus = true;
-            user.paymentDate = new Date();
+            user.paymentDate = paymentDate;
+            user.subscriptionExpiryDate = expiryDate;
+            user.subscriptionStatus = "active";
             await user.save();
           }
+
+          // Check expiration and refresh user
+          await checkSubscriptionExpiry(user);
+          await user.populate();
+          const effectiveStatus = getEffectivePaymentStatus(user);
 
           // Return user data in expected format
           return res.status(200).json({
@@ -312,8 +376,10 @@ exports.verifySession = async (req, res, next) => {
               id: user._id.toString(),
               username: user.username,
               email: user.email,
-              paymentStatus: user.paymentStatus,
+              paymentStatus: effectiveStatus,
               paymentDate: user.paymentDate || new Date(),
+              subscriptionExpiryDate: user.subscriptionExpiryDate || null,
+              subscriptionStatus: user.subscriptionStatus || "active",
             },
           });
         } else {

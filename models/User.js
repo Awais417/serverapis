@@ -30,6 +30,12 @@ const userSchema = new mongoose.Schema(
     },
     stripeCustomerId: String,
     paymentDate: Date,
+    subscriptionExpiryDate: Date,
+    subscriptionStatus: {
+      type: String,
+      enum: ["active", "expired", "none"],
+      default: "none",
+    },
   },
   { timestamps: true }
 );

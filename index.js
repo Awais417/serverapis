@@ -5,7 +5,9 @@ const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const codeRoutes = require("./routes/codeRoutes");
+const subscriptionRoutes = require("./routes/subscriptionRoutes");
 const paymentController = require("./controllers/paymentController");
+const { expireSubscriptions } = require("./utils/expireSubscriptions");
 
 dotenv.config();
 
@@ -54,10 +56,24 @@ app.use(express.json());
 // Connect to database
 connectDB();
 
+// Schedule subscription expiration check (runs every hour)
+// For Vercel, use Vercel Cron Jobs instead (see vercel.json)
+if (require.main === module) {
+  // Only run in local development
+  setInterval(async () => {
+    try {
+      await expireSubscriptions();
+    } catch (error) {
+      console.error("Scheduled subscription expiration error:", error);
+    }
+  }, 60 * 60 * 1000); // Every hour
+}
+
 // Routes
 app.use("/auth", authRoutes);
 app.use("/payment", paymentRoutes);
 app.use("/codes", codeRoutes);
+app.use("/subscription", subscriptionRoutes);
 
 app.get("/", (req, res) => {
   res.send(`App is working fine`);
