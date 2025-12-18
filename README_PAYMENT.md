@@ -5,12 +5,7 @@
 Add these to your `.env` file:
 
 ```env
-# Stripe Keys
-STRIPE_SECRET_KEY=sk_test_51Oqyo3Ap5li0mnBdPp3VP8q3NWQGnkM2CqvQkF6VV6GRPB0JdbNAX1UGIhjdlZghTj0MGg5GzRI5pHp5clQa9wAO005TR3ezz8
-STRIPE_PUBLISHABLE_KEY=pk_test_51Oqyo3Ap5li0mnBdxJiCZ4k0IEWVbOgGvyMbYB6XVUqYh1yNUEnRiX4e5UO1eces9kf9qZNZcF7ybjxg7MimKmUQ00a9s60Pa1
-STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
-
-# Frontend URL (for redirects)
+ tend URL (for redirects)
 FRONTEND_URL=https://your-frontend-url.com
 ```
 
