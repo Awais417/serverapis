@@ -19,6 +19,7 @@ Creates a new code.
 {
   "code": "shahid1122",
   "description": "Optional description",
+  "discount": 10,
   "isActive": true
 }
 ```
@@ -30,6 +31,7 @@ curl -X POST https://serverapis.vercel.app/codes \
   -d '{
     "code": "shahid1122",
     "description": "Premium code for Shahid",
+    "discount": 10,
     "isActive": true
   }'
 ```
@@ -42,6 +44,7 @@ curl -X POST https://serverapis.vercel.app/codes \
     "_id": "507f1f77bcf86cd799439011",
     "code": "shahid1122",
     "description": "Premium code for Shahid",
+    "discount": 10,
     "isActive": true,
     "usedBy": null,
     "usedAt": null,
@@ -181,6 +184,7 @@ Updates an existing code.
 {
   "code": "shahid1122",
   "description": "Updated description",
+  "discount": 15,
   "isActive": false
 }
 ```
@@ -191,6 +195,7 @@ curl -X PUT https://serverapis.vercel.app/codes/507f1f77bcf86cd799439011 \
   -H "Content-Type: application/json" \
   -d '{
     "description": "Updated description",
+    "discount": 15,
     "isActive": false
   }'
 ```
@@ -203,6 +208,7 @@ curl -X PUT https://serverapis.vercel.app/codes/507f1f77bcf86cd799439011 \
     "_id": "507f1f77bcf86cd799439011",
     "code": "shahid1122",
     "description": "Updated description",
+    "discount": 15,
     "isActive": false,
     "usedBy": null,
     "usedAt": null,
@@ -255,16 +261,19 @@ Creates multiple codes at once.
     {
       "code": "shahid1122",
       "description": "Code for Shahid",
+      "discount": 10,
       "isActive": true
     },
     {
       "code": "kingkon7777",
       "description": "Code for King",
+      "discount": 15,
       "isActive": true
     },
     {
       "code": "babyesisto888",
       "description": "Code for Baby",
+      "discount": 20,
       "isActive": true
     }
   ]
@@ -280,16 +289,19 @@ curl -X POST https://serverapis.vercel.app/codes/bulk \
       {
         "code": "shahid1122",
         "description": "Code for Shahid",
+        "discount": 10,
         "isActive": true
       },
       {
         "code": "kingkon7777",
         "description": "Code for King",
+        "discount": 15,
         "isActive": true
       },
       {
         "code": "babyesisto888",
         "description": "Code for Baby",
+        "discount": 20,
         "isActive": true
       }
     ]

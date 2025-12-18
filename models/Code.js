@@ -14,6 +14,12 @@ const codeSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    discount: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100, // Discount percentage (0-100)
+    },
     isActive: {
       type: Boolean,
       default: true,

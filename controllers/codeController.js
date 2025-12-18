@@ -13,7 +13,7 @@ exports.createCode = async (req, res, next) => {
   setCorsHeaders(res);
 
   try {
-    const { code, description, isActive } = req.body;
+    const { code, description, discount, isActive } = req.body;
 
     if (!code) {
       return res.status(400).json({
@@ -35,9 +35,22 @@ exports.createCode = async (req, res, next) => {
       });
     }
 
+    // Validate discount if provided
+    if (discount !== undefined) {
+      if (typeof discount !== "number" || discount < 0 || discount > 100) {
+        return res.status(400).json({
+          error: {
+            code: "400",
+            message: "Discount must be a number between 0 and 100",
+          },
+        });
+      }
+    }
+
     const newCode = await Code.create({
       code: code.trim(),
       description: description || "",
+      discount: discount !== undefined ? discount : 0,
       isActive: isActive !== undefined ? isActive : true,
     });
 
@@ -201,7 +214,7 @@ exports.updateCode = async (req, res, next) => {
 
   try {
     const { id } = req.params;
-    const { code, description, isActive } = req.body;
+    const { code, description, discount, isActive } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -232,6 +245,18 @@ exports.updateCode = async (req, res, next) => {
     }
     if (description !== undefined) {
       updateData.description = description;
+    }
+    if (discount !== undefined) {
+      // Validate discount
+      if (typeof discount !== "number" || discount < 0 || discount > 100) {
+        return res.status(400).json({
+          error: {
+            code: "400",
+            message: "Discount must be a number between 0 and 100",
+          },
+        });
+      }
+      updateData.discount = discount;
     }
     if (isActive !== undefined) {
       updateData.isActive = isActive;
@@ -332,11 +357,19 @@ exports.createBulkCodes = async (req, res, next) => {
     const errors = [];
 
     for (let i = 0; i < codes.length; i++) {
-      const { code, description, isActive } = codes[i];
+      const { code, description, discount, isActive } = codes[i];
 
       if (!code) {
         errors.push(`Code at index ${i} is missing the code field`);
         continue;
+      }
+
+      // Validate discount if provided
+      if (discount !== undefined) {
+        if (typeof discount !== "number" || discount < 0 || discount > 100) {
+          errors.push(`Code at index ${i} has invalid discount (must be 0-100)`);
+          continue;
+        }
       }
 
       // Check for duplicates in the array
@@ -351,6 +384,7 @@ exports.createBulkCodes = async (req, res, next) => {
       codesToInsert.push({
         code: code.trim(),
         description: description || "",
+        discount: discount !== undefined ? discount : 0,
         isActive: isActive !== undefined ? isActive : true,
       });
     }
