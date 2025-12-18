@@ -4,10 +4,16 @@ const paymentController = require("../controllers/paymentController");
 
 // Handle OPTIONS for payment routes
 router.options("*", (req, res) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.sendStatus(204);
+  try {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.sendStatus(204);
+  } catch (error) {
+    console.error("OPTIONS handler error:", error);
+    res.header("Access-Control-Allow-Origin", "*");
+    res.sendStatus(204);
+  }
 });
 
 // Create checkout session
