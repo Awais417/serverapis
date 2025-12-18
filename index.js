@@ -4,6 +4,7 @@ const cors = require("cors");
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
+const codeRoutes = require("./routes/codeRoutes");
 const paymentController = require("./controllers/paymentController");
 
 dotenv.config();
@@ -56,6 +57,7 @@ connectDB();
 // Routes
 app.use("/auth", authRoutes);
 app.use("/payment", paymentRoutes);
+app.use("/codes", codeRoutes);
 
 app.get("/", (req, res) => {
   res.send(`App is working fine`);
