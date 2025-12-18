@@ -28,18 +28,20 @@ exports.signup = async (req, res, next) => {
     }
 
     const user = await User.create({ username, email, password });
-    const token = generateToken(user._id);
+    const token = generateToken(user._id.toString());
 
     res.status(201).json({
       message: "User created successfully",
       token,
       user: {
-        id: user._id,
+        id: user._id.toString(),
         username: user.username,
         email: user.email,
       },
     });
   } catch (error) {
+    console.error("Signup error:", error);
+    
     // Handle MongoDB duplicate key errors
     if (error.code === 11000) {
       const field = Object.keys(error.keyPattern)[0];
@@ -49,13 +51,23 @@ exports.signup = async (req, res, next) => {
           : field === "username"
           ? "Username is already taken"
           : `${field} already exists`;
-      return res.status(409).json({ message });
+      return res.status(409).json({ 
+        error: {
+          code: "409",
+          message: message
+        }
+      });
     }
 
     // Handle validation errors
     if (error.name === "ValidationError") {
       const messages = Object.values(error.errors).map((err) => err.message);
-      return res.status(400).json({ message: messages.join(", ") });
+      return res.status(400).json({ 
+        error: {
+          code: "400",
+          message: messages.join(", ")
+        }
+      });
     }
 
     // Pass other errors to error handler
@@ -82,13 +94,13 @@ exports.login = async (req, res, next) => {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    const token = generateToken(user._id);
+    const token = generateToken(user._id.toString());
 
     res.status(200).json({
       message: "Login successful",
       token,
       user: {
-        id: user._id,
+        id: user._id.toString(),
         username: user.username,
         email: user.email,
       },

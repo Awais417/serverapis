@@ -40,13 +40,14 @@ app.use((req, res, next) => {
 // Error handler
 app.use((err, req, res, next) => {
   console.error("Error:", err);
+  console.error("Error stack:", err.stack);
   
-  // Don't send error stack in production
-  const isDevelopment = process.env.NODE_ENV !== "production";
-  
+  // Return error in format Unity expects
   res.status(err.status || 500).json({
-    message: err.message || "Something went wrong!",
-    ...(isDevelopment && { error: err.stack }),
+    error: {
+      code: String(err.status || 500),
+      message: err.message || "A server error has occurred"
+    }
   });
 });
 
