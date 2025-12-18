@@ -23,6 +23,14 @@ const corsOptions = {
 // Apply CORS to all routes first
 app.use(cors(corsOptions));
 
+// Add CORS headers middleware for all responses
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, stripe-signature");
+  next();
+});
+
 // Handle preflight OPTIONS requests explicitly for all routes
 app.options("*", (req, res) => {
   res.header("Access-Control-Allow-Origin", "*");

@@ -129,6 +129,14 @@ exports.getPaymentStatus = async (req, res, next) => {
   try {
     const { userId } = req.params;
 
+    // Log the user ID being requested
+    console.log("Payment status requested for user ID:", userId);
+
+    // Set CORS headers explicitly
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
     if (!userId) {
       return res.status(400).json({
         error: {
@@ -146,11 +154,13 @@ exports.getPaymentStatus = async (req, res, next) => {
           code: "404",
           message: "User not found",
         },
+        requestedUserId: userId, // Include the ID that was requested
       });
     }
 
     res.status(200).json({
       message: "Payment status retrieved",
+      requestedUserId: userId, // Include the ID that was requested
       user: {
         id: user._id.toString(),
         username: user.username,
@@ -161,6 +171,10 @@ exports.getPaymentStatus = async (req, res, next) => {
     });
   } catch (error) {
     console.error("Get payment status error:", error);
+    // Set CORS headers even on error
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
     next(error);
   }
 };
